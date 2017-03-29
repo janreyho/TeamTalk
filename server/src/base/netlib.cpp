@@ -39,7 +39,11 @@ int netlib_listen(
 	CBaseSocket* pSocket = new CBaseSocket();
 	if (!pSocket)
 		return NETLIB_ERROR;
-
+    //     实现在BaseSocket.cpp 关键的两步是
+    //     加入到全局的hash_map
+    //    AddBaseSocket(this); 
+    //  加入到事件循环，有连接上来调用回调函数处理
+    //    CEventDispatch::Instance()->AddEvent(m_socket, SOCKET_READ | SOCKET_EXCEP);
 	int ret =  pSocket->Listen(server_ip, port, callback, callback_data);
 	if (ret == NETLIB_ERROR)
 		delete pSocket;
@@ -55,7 +59,7 @@ net_handle_t netlib_connect(
 	CBaseSocket* pSocket = new CBaseSocket();
 	if (!pSocket)
 		return NETLIB_INVALID_HANDLE;
-
+// 连接成功就加入到事件循环,加入到全局的hash_map
 	net_handle_t handle = pSocket->Connect(server_ip, port, callback, callback_data);
 	if (handle == NETLIB_INVALID_HANDLE)
 		delete pSocket;
@@ -64,11 +68,13 @@ net_handle_t netlib_connect(
 
 int netlib_send(net_handle_t handle, void* buf, int len)
 {
+	 // 从全局hash_map中找到这个fd对应的CBaseSocket*对象
 	CBaseSocket* pSocket = FindBaseSocket(handle);
 	if (!pSocket)
 	{
 		return NETLIB_ERROR;
 	}
+	// 发送数据，如果block，加入事件循环等待下一次写数据
 	int ret = pSocket->Send(buf, len);
 	pSocket->ReleaseRef();
 	return ret;
@@ -79,7 +85,7 @@ int netlib_recv(net_handle_t handle, void* buf, int len)
 	CBaseSocket* pSocket = FindBaseSocket(handle);
 	if (!pSocket)
 		return NETLIB_ERROR;
-
+// recv就相对比较简单，只需要调用recv即可(TCP只有写的时候才知道有没有出错)
 	int ret = pSocket->Recv(buf, len);
 	pSocket->ReleaseRef();
 	return ret;
@@ -154,7 +160,7 @@ int netlib_add_loop(callback_t callback, void* user_data)
 	CEventDispatch::Instance()->AddLoop(callback, user_data);
 	return 0;
 }
-
+// 调用事件循环函数
 void netlib_eventloop(uint32_t wait_timeout)
 {
 	CEventDispatch::Instance()->StartDispatch(wait_timeout);

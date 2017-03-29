@@ -31,7 +31,7 @@ public:
     
     void AddLoop(callback_t callback, void* user_data);
 
-	void StartDispatch(uint32_t wait_timeout = 100);
+	void StartDispatch(uint32_t wait_timeout = 100);// 事件循环函数(不断地处理I/O事件和定时事件)
     void StopDispatch();
     
     bool isRunning() {return running;}
@@ -49,7 +49,7 @@ private:
 		void*		user_data;
 		uint64_t	interval;
 		uint64_t	next_tick;
-	} TimerItem;
+	} TimerItem; // 回调函数，回调函数参数，触发间隔，下一个触发的时间
 
 private:
 #ifdef _WIN32

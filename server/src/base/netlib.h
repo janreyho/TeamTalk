@@ -21,7 +21,7 @@ extern "C" {
 int netlib_init();
 
 int netlib_destroy();
-
+// 上面两个函数对win32才有用(Winsock服务的初始化)，其他平台都是空实现(无意义的)
 int netlib_listen(	
 		const char*	server_ip, 
 		uint16_t	port,
@@ -41,7 +41,7 @@ int netlib_recv(net_handle_t handle, void* buf, int len);
 int netlib_close(net_handle_t handle);
 
 int netlib_option(net_handle_t handle, int opt, void* optval);
-
+// 向eventloop中添加或者删除timer
 int netlib_register_timer(callback_t callback, void* user_data, uint64_t interval);
 
 int netlib_delete_timer(callback_t callback, void* user_data);

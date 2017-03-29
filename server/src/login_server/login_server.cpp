@@ -93,12 +93,12 @@ int main(int argc, char* argv[])
     
     
     pIpParser = new IpParser();
-    
+
 	int ret = netlib_init();
 
 	if (ret == NETLIB_ERROR)
 		return ret;
-	CStrExplode client_listen_ip_list(client_listen_ip, ';');
+	CStrExplode client_listen_ip_list(client_listen_ip, ';');  //client_listen_ip为以';'分割的ip字符串
 	for (uint32_t i = 0; i < client_listen_ip_list.GetItemCnt(); i++) {
 		ret = netlib_listen(client_listen_ip_list.GetItem(i), client_port, client_callback, NULL);
 		if (ret == NETLIB_ERROR)

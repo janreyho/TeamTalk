@@ -19,7 +19,7 @@ CEventDispatch::CEventDispatch()
 		log("kqueue failed");
 	}
 #else
-	m_epfd = epoll_create(1024);
+	m_epfd = epoll_create(1024);// 最大监听1024个socket
 	if (m_epfd == -1)
 	{
 		log("epoll_create failed");
@@ -41,6 +41,7 @@ CEventDispatch::~CEventDispatch()
 void CEventDispatch::AddTimer(callback_t callback, void* user_data, uint64_t interval)
 {
 	list<TimerItem*>::iterator it;
+	// 判断是否已经加入了，如果没有已经加入了，只需要在延长触发的时间即可
 	for (it = m_timer_list.begin(); it != m_timer_list.end(); it++)
 	{
 		TimerItem* pItem = *it;
@@ -51,7 +52,7 @@ void CEventDispatch::AddTimer(callback_t callback, void* user_data, uint64_t int
 			return;
 		}
 	}
-
+// 如果是新的timer，那么加入到m_timer_list
 	TimerItem* pItem = new TimerItem;
 	pItem->callback = callback;
 	pItem->user_data = user_data;
@@ -62,6 +63,7 @@ void CEventDispatch::AddTimer(callback_t callback, void* user_data, uint64_t int
 
 void CEventDispatch::RemoveTimer(callback_t callback, void* user_data)
 {
+	// 找到相应的timer移除即可，代码比较简单
 	list<TimerItem*>::iterator it;
 	for (it = m_timer_list.begin(); it != m_timer_list.end(); it++)
 	{
@@ -74,7 +76,7 @@ void CEventDispatch::RemoveTimer(callback_t callback, void* user_data)
 		}
 	}
 }
-
+// 检查是否有需要触发的超时事件
 void CEventDispatch::_CheckTimer()
 {
 	uint64_t curr_tick = get_tick_count();
@@ -351,7 +353,7 @@ void CEventDispatch::RemoveEvent(SOCKET fd, uint8_t socket_event)
 	}
 }
 
-void CEventDispatch::StartDispatch(uint32_t wait_timeout)
+void CEventDispatch::StartDispatch(uint32_t wait_timeout)	//数据库10ms，其他默认100ms
 {
 	struct epoll_event events[1024];
 	int nfds = 0;
@@ -366,6 +368,10 @@ void CEventDispatch::StartDispatch(uint32_t wait_timeout)
 		for (int i = 0; i < nfds; i++)
 		{
 			int ev_fd = events[i].data.fd;
+			// 实现在BaseSocket.cpp中,获取文件句柄ev_fd对应的CBaseSocket*
+            // 为了提高查找效率采用hash_map存储
+            // typedef hash_map<net_handle_t, CBaseSocket*> SocketMap;
+            // SocketMap    g_socket_map;
 			CBaseSocket* pSocket = FindBaseSocket(ev_fd);
 			if (!pSocket)
 				continue;

@@ -97,7 +97,7 @@ public:
     
     void BroadcastPdu(CImPdu* pdu, uint32_t client_type_flag);
 private:
-    ImUserMap_t m_im_user_map;
+    ImUserMap_t m_im_user_map;      //by user_id
     ImUserMapByName_t m_im_user_map_by_name;
 };
 

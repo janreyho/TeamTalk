@@ -20,8 +20,8 @@ static CHandlerMap* s_handler_map;
 
 uint32_t CProxyConn::s_uuid_alloctor = 0;
 CLock CProxyConn::s_list_lock;
-list<ResponsePdu_t*> CProxyConn::s_response_pdu_list;
-static CThreadPool g_thread_pool;
+list<ResponsePdu_t*> CProxyConn::s_response_pdu_list;   //返回给msg_server数据的任务列表
+static CThreadPool g_thread_pool;       //数据库操作ProxyTask任务队列ThreadPool池
 
 void proxy_timer_callback(void* callback_data, uint8_t msg, uint32_t handle, void* pParam)
 {
@@ -78,10 +78,10 @@ static void sig_handler(int sig_no)
 
 int init_proxy_conn(uint32_t thread_num)
 {
-	s_handler_map = CHandlerMap::getInstance();
-	g_thread_pool.Init(thread_num);
+	s_handler_map = CHandlerMap::getInstance();    //获取map<pdu::commandId, DB_PROXY::各种函数>
+	g_thread_pool.Init(thread_num);                //ThreadPool池中有thread_num个队列
 
-	netlib_add_loop(proxy_loop_callback, NULL);
+	netlib_add_loop(proxy_loop_callback, NULL);    //反对到msg_server的回调函数
 
 	signal(SIGTERM, sig_handler);
 

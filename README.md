@@ -493,6 +493,12 @@ epoll对文件描述符的操作有两种模式：LT（level trigger）和ET（e
 
 　　ET模式在很大程度上减少了epoll事件被重复触发的次数，因此效率要比LT模式高。epoll工作在ET模式的时候，必须使用非阻塞套接口，以避免由于一个文件句柄的阻塞读/阻塞写操作把处理多个文件描述符的任务饿死。
 
+# 其他
+
+````bash
+git config --global core.whitespace cr-at-eol  #取消git diff中换行符差异，不再显示^M
+````
+
 # TT流程随笔
 
 细节：
