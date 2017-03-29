@@ -7,6 +7,9 @@
 mysqld_safe
 #开启远程登录
 mysql -u root -p
+show databases;
+use teamtalk;
+show tables;
 #密码12345
 MariaDB > GRANT SELECT,INSERT,UPDATE,DELETE ON teamtalk.* TO root@61.50.103.126 identified by '12345';
 ```
@@ -330,6 +333,166 @@ TeamTalk作为一个敢于开源出来的IM，还是非常值得赞扬的，国�
 
 原文地址：[http://blog.makeex.com/2015/05/30/the-architecture-of-teamtalk-mac-client/](http://blog.makeex.com/2015/05/30/the-architecture-of-teamtalk-mac-client/)
 
+# protobuf
+
+````bash
+#example使用方法
+make cpp
+make python
+make go
+
+#用protoc生成addressbook的模型
+export DST_DIR=.
+export SRC_DIR=.
+protoc -I=$SRC_DIR --cpp_out=$DST_DIR $SRC_DIR/addressbook.proto
+#编译add_person.cc
+g++ -o add_person add_person.cc addressbook.pb.cc -lprotobuf
+#执行add_person
+./add_person personList.dat
+````
+
+### proto文件的语法
+
+1. 确定消息命名,给消息取一个有意义的名字。
+2. 指定字段的类型
+3. 定义字段的编号,在Protocol Buffers中,字段的编号非常重要,字段名仅仅是作为参考和生成代码用。需要注意的是字段的编号区间范围,其中19000 ~ 19999被Protocol Buffers作为保留字段。
+
+所指定的字段类型修饰符必须是如下之一：
+
+required：一个格式良好的消息一定要含有1个这种字段。表示该值是必须要设置的；
+
+optional：消息格式中该字段可以有0个或1个值（不超过1个），也就是可有可无；
+
+repeated：在一个格式良好的消息中，这种字段可以重复任意多次（包括0次）。重复的值的顺序会被保留。表示该值可以重复，相当于java中的List。
+
+### 分配编号：
+
+正如上述文件格式，在消息定义中，每个字段都有唯一的一个数字标识符。这些标识符是用来在消息的二进制格式中识别各个字段的，一旦开始使用就不能够再改变。注：[1,15]之内的标识号在编码的时候会占用一个字节。[16,2047]之内的标识号则占用2个字节。所以应该为那些频繁出现的消息元素保留 [1,15]之内的标识号。切记：要为将来有可能添加的、频繁出现的标识号预留一些标识号。
+
+消息也是可以嵌套的，即message套message，还可以使用枚举。还可以使用import导入其他proto文件。
+
+### 包（Package）
+
+通常都要为.proto文件增加一个package声明符，用来防止不同的消息类型有命名冲突。
+
+```
+package foo.bar;
+message Open { ... }
+
+```
+
+在其他的消息格式定义中可以使用包名+消息名的方式来定义域的类型，如：
+
+```
+message Foo {
+  ...
+  required foo.bar.Open open = 1;
+  ...
+}
+
+```
+
+包的声明符会根据使用语言的不同影响生成的代码。
+
+对于C++，产生的类会被包装在C++的命名空间中，如上例中的Open会被封装在 foo::bar空间中；
+
+对于Java，包声明符会变为java的一个包，除非在.proto文件中提供了一个明确有java_package；
+
+对于 Python，这个包声明符是被忽略的，因为Python模块是按照其在文件系统中的位置进行组织的。
+
+### protobuf使用流程
+
+1. 编写协议文件,也就是.proto文件
+
+2. 利用protoc命令将协议文件转换为我们需要的开发语言接口.该接口中包含了对协议中定义数据的操作方法.可以从生成的.h文件中查看有哪些接口,常用的就是设置字段数据,获取字段数据,序列化,反序列化等;
+
+   列举一些公用方法:
+
+   ```
+   isInitialized(): 检查是否所有的required字段是否被赋值
+   toString(): 返回一个便于阅读的message表示(本来是二进制的，不可读)
+   byte[] toByteArray();: 序列化message并且返回一个原始字节类型的字节数组
+   static XXX parseFrom(byte[] data);: 将给定的字节数组解析为message
+   void writeTo(OutputStream output);: 将序列化后的message写入到输出流
+   static Person parseFrom(InputStream input);: 读入并且将输入流解析为一个message
+
+   ```
+
+
+1. 在项目中使用生成的接口操作协议数据;
+
+   协议中每个message都会转换为一个类,使用的时候创建一个消息对象,初始化里面的属性值并且序列化,然后可以存储到文件,可以socket发送等等.
+
+   使用数据的时候,先反序列化,然后就可以正常使用了.
+
+
+1. c++编译如下,注意加pthread库,否则出错.
+
+```
+g++  xx.cpp xx.pb.cc  -I /usr/local/protobuf/include -L /usr/local/protobuf/lib -lprotobuf -pthread
+```
+
+### protobuf编码协议
+
+搞清楚编码协议,是为了能清楚数据大小,这样才调试socket程序的时候,能看懂数据长度的含义.
+
+在Protobuf中采用Base­128变长编码,所谓变长编码是和定长编码相对的,定长编码使用固定字节数来表示,如int32类型的数字固定使用4 bytes表示,而变长编码是需要几个字节就使用几个字节,如对于int32类型的数字1来说,只需要1 bytes足够。Base­128变长编码的原则就两条
+
+1. 每个字节使用低7位表示数字,除了最后一个字节,其他字节的最高位都设置为1。
+2. 采用Little­Endian字节序
+
+# epoll
+
+## epoll接口
+
+epoll操作过程需要三个接口，分别如下：
+
+```
+#include <sys/epoll.h>
+int epoll_create(int size);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+```
+
+**（1） int epoll_create(int size);**
+　　创建一个epoll的句柄，size用来告诉内核这个监听的数目一共有多大。这个参数不同于select()中的第一个参数，给出最大监听的fd+1的值。需要注意的是，当创建好epoll句柄后，它就是会占用一个fd值，在linux下如果查看/proc/进程id/fd/，是能够看到这个fd的，所以在使用完epoll后，必须调用close()关闭，否则可能导致fd被耗尽。
+
+**（2）int epoll_ctl(int epfd, int op, int fd, struct epoll_event \*event);**
+　　epoll的事件注册函数，它不同与select()是在监听事件时告诉内核要监听什么类型的事件epoll的事件注册函数，它不同与select()是在监听事件时告诉内核要监听什么类型的事件，而是在这里先注册要监听的事件类型。第一个参数是epoll_create()的返回值，第二个参数表示动作，用三个宏来表示：
+EPOLL_CTL_ADD：注册新的fd到epfd中；
+EPOLL_CTL_MOD：修改已经注册的fd的监听事件；
+EPOLL_CTL_DEL：从epfd中删除一个fd；
+第三个参数是需要监听的fd，第四个参数是告诉内核需要监听什么事，struct epoll_event结构如下：
+
+```
+struct epoll_event {
+  __uint32_t events;  /* Epoll events */
+  epoll_data_t data;  /* User data variable */
+};
+```
+
+events可以是以下几个宏的集合：
+EPOLLIN ：表示对应的文件描述符可以读（包括对端SOCKET正常关闭）；
+EPOLLOUT：表示对应的文件描述符可以写；
+EPOLLPRI：表示对应的文件描述符有紧急的数据可读（这里应该表示有带外数据到来）；
+EPOLLERR：表示对应的文件描述符发生错误；
+EPOLLHUP：表示对应的文件描述符被挂断；
+EPOLLET： 将EPOLL设为边缘触发(Edge Triggered)模式，这是相对于水平触发(Level Triggered)来说的。
+EPOLLONESHOT：只监听一次事件，当监听完这次事件之后，如果还需要继续监听这个socket的话，需要再次把这个socket加入到EPOLL队列里
+
+**（3） int epoll_wait(int epfd, struct epoll_event \* events, int maxevents, int timeout);**
+　　等待事件的产生，类似于select()调用。参数events用来从内核得到事件的集合，maxevents告之内核这个events有多大，这个maxevents的值不能大于创建epoll_create()时的size，参数timeout是超时时间（毫秒，0会立即返回，-1将不确定，也有说法说是永久阻塞）。该函数返回需要处理的事件数目，如返回0表示已超时。
+
+## 工作模式
+
+epoll对文件描述符的操作有两种模式：LT（level trigger）和ET（edge trigger）。LT模式是默认模式，LT模式与ET模式的区别如下：
+
+　　LT模式：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序可以不立即处理该事件。下次调用epoll_wait时，会再次响应应用程序并通知此事件。
+
+　　ET模式：当epoll_wait检测到描述符事件发生并将此事件通知应用程序，应用程序必须立即处理该事件。如果不处理，下次调用epoll_wait时，不会再次响应应用程序并通知此事件。
+
+　　ET模式在很大程度上减少了epoll事件被重复触发的次数，因此效率要比LT模式高。epoll工作在ET模式的时候，必须使用非阻塞套接口，以避免由于一个文件句柄的阻塞读/阻塞写操作把处理多个文件描述符的任务饿死。
+
 # TT流程随笔
 
 细节：
@@ -363,10 +526,26 @@ TeamTalk作为一个敢于开源出来的IM，还是非常值得赞扬的，国�
 
 该存库的存库，该更新内存的，更新内存，然后发送事件总线更新ui  或者通知service中的相关订阅者，完成业务逻辑的数据相关处理
 
+
+
+- 负载均衡login_server
+
+TT一开始用户打开app登录的流程是，先用http get的方式去login_server上获取一个负载最小的msg_server的地址，然后打开socket连接那个msg_server。然后一旦连接成功，你就可以发login消息了。
+
+而login消息其实就是由用户名和密码（还有几个其他字段，此处不提）组成的一段消息。发到msg_server上后，msg_server会将其再发给db_proxy_server，db_proxy_server收到这个消息后，会用消息里的用户名去查询数据库，然后将查询的结果与消息里的密码比对，如果比对成功，那么就会向msg_server返回一个OK消息，然后msg_server就会将此用户加入valid user的列表里。之后，你的用户所发的消息就能被msg_server放行了。
+
+让msg_server和login_server定期通讯，每个msg_server定期的给login_server发个消息告诉一下当前的用户数。
+
+- 基础网络库netlib
+
+TT还有一个异步网络库，那就是push_server里用的那个。
+
+其他的server都是用的netlib，而netlib虽然是用c++写的，但其实却是C风格的。所有的接口都是封装成netlib_xxx的函数形式。
+
 # 相关网址
 
-- TeamTalk 一键部署方案：TTAutoDeploy [http://www.open-open.com/lib/view/open1414591839840.html](http://www.open-open.com/lib/view/open1414591839840.html)
-- TeamTalk消息服务器原理及二次开发简介（笨笨的鸡蛋）[http://my.oschina.net/u/877397/blog/483599](http://my.oschina.net/u/877397/blog/483599)
-- TeamTalk 服务端分析 一、编译（蓝狐）[http://www.bluefoxah.org/teamtalk/TeamTalk_Compile.html](http://www.bluefoxah.org/teamtalk/TeamTalk_Compile.html)
-- mac TeamTalk开发点点滴滴 [http://www.faceye.net/search/65210.html](http://www.faceye.net/search/65210.html)
+
+
+- [TeamTalk消息服务器原理及二次开发简介（笨笨的鸡蛋）](http://my.oschina.net/u/877397/blog/483599)
+- [新版TeamTalk完整部署教程](http://www.bluefoxah.org/teamtalk/new_tt_deploy.html)
 

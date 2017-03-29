@@ -1,3 +1,6 @@
+*.swp
+.DS_Store
+
 server/run/daeml
 server/run/db_proxy_server/
 server/run/file_server/
