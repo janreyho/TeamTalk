@@ -5,7 +5,7 @@ option optimize_for = LITE_RUNTIME;
 
 //service id: 0x0006
 
-message IMP2PCmdMsg{
+message IMP2PCmdMsg{        //客户端之间的协议，服务端不认识，只做转发。例如“正在输入”这些。
 	//cmd id:		0x0601
 	required uint32 from_user_id = 1;
 	required uint32 to_user_id = 2;

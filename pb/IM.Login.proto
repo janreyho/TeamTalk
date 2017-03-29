@@ -10,7 +10,7 @@ message IMMsgServReq{
 	//cmd id:		0x0101
 }
 
-message IMMsgServRsp{
+message IMMsgServRsp{       //msg_server地址请求(已经废弃，改用http请求)
 	//cmd id:		0x0102
 	required IM.BaseDefine.ResultType result_code = 1;
 	optional string prior_ip = 2;
@@ -51,7 +51,7 @@ message IMKickUser{
 	required IM.BaseDefine.KickReasonType kick_reason = 2;
 }
 
-message IMDeviceTokenReq{
+message IMDeviceTokenReq{       //设备token汇报请求(用于推送)
 	//cmd id:		0x0108
 	required uint32 user_id = 1;
 	required string device_token = 2;

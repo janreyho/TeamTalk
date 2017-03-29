@@ -32,7 +32,7 @@ message IMMsgDataReadAck{
 	required IM.BaseDefine.SessionType session_type = 4;
 }
 
-message IMMsgDataReadNotify{
+message IMMsgDataReadNotify{		//消息已读通知，用于多端同步。
 	//cmd id:		0x0304
 	required uint32 user_id = 1;			//发送此信令的用户id
 	required uint32 session_id = 2;		
@@ -40,11 +40,11 @@ message IMMsgDataReadNotify{
 	required IM.BaseDefine.SessionType session_type = 4;
 }
 
-message IMClientTimeReq{
+message IMClientTimeReq{		//服务器时间请求。
 	//cmd id:		0x0305
 }
 
-message IMClientTimeRsp{
+message IMClientTimeRsp{		//未读消息计数请求。
 	//cmd id:		0x0306
 	required uint32 server_time = 1;
 }
@@ -74,7 +74,7 @@ message IMGetMsgListReq{
 }
 
 //对于群而言，如果消息数目返回的数值小于请求的cnt,则表示群的消息能拉取的到头了，更早的消息没有权限拉取。
-//如果msg_cnt 和 msg_id_begin计算得到的最早消息id与实际返回的最早消息id不一致，说明服务器消息有缺失，需要
+//如果msg_cnt 和 msg_id_begin 计算得到的最早消息id与实际返回的最早消息id不一致，说明服务器消息有缺失，需要
 //客户端做一个缺失标记，避免下次再次拉取。
 message IMGetMsgListRsp{
 	//cmd id:		0x030a
@@ -86,7 +86,7 @@ message IMGetMsgListRsp{
 	optional bytes attach_data = 20;
 }
 
-message IMGetLatestMsgIdReq{
+message IMGetLatestMsgIdReq{	//获取某个会话最新msg_id请求
 	//cmd id: 		0x030b
 	required uint32 user_id = 1;
 	required IM.BaseDefine.SessionType session_type = 2;

@@ -6,7 +6,7 @@ option optimize_for = LITE_RUNTIME;
 
 //service id:0x0004
 
-message IMNormalGroupListReq{
+message IMNormalGroupListReq{		//用户所在固定群组请求。
 	//cmd id:			0x0401
 	required uint32 user_id = 1;
 	optional bytes attach_data = 20;
