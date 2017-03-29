@@ -36,7 +36,7 @@ enum LoginCmdID{
 
 // command id for buddy list
 enum BuddyListCmdID{
-    CID_BUDDY_LIST_RECENT_CONTACT_SESSION_REQUEST       = 0x0201;//请求最近会话列表
+    CID_BUDDY_LIST_RECENT_CONTACT_SESSION_REQUEST       = 0x0201;
     CID_BUDDY_LIST_RECENT_CONTACT_SESSION_RESPONSE      = 0x0202;
     CID_BUDDY_LIST_STATUS_NOTIFY                        = 0x0203; //
     CID_BUDDY_LIST_USER_INFO_REQUEST                    = 0x0204; //
